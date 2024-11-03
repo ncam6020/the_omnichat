@@ -8,6 +8,7 @@ import base64
 from io import BytesIO
 from meeting_details_form import render_meeting_details_form
 from upload_transcript import upload_transcript
+import openai
 
 dotenv.load_dotenv()
 
@@ -63,6 +64,26 @@ def get_image_base64(image_raw):
     img_byte = buffered.getvalue()
 
     return base64.b64encode(img_byte).decode('utf-8')
+
+def extract_text_from_image(image, api_key):
+    # Convert the image to bytes
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_bytes = buffered.getvalue()
+
+    try:
+        # Use OpenAI's OCR with GPT-3/4 capability to extract text from the image
+        response = openai.Image.create(
+            file=img_bytes,
+            purpose="edit",
+            api_key=api_key
+        )
+        # Assuming response contains the extracted text in a specific key
+        extracted_text = response['data'][0]['caption']  # This will depend on the response schema
+        return extracted_text
+    except Exception as e:
+        st.error(f"Error during image text extraction: {str(e)}")
+        return ""
 
 def main():
     # --- Page Config ---
@@ -143,23 +164,11 @@ def main():
                     img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
                     raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
                     # Extract text from image using OpenAI API
-                    extracted_text = client.chat.completions.create(
-                        model="gpt-3.5-turbo", 
-                        messages=[{"role": "user", "content": "Extract the text from this image."}],
-                        input=raw_img,
-                        temperature=0.0
-                    )
+                    extracted_text = extract_text_from_image(raw_img, openai_api_key)
                     # Append extracted text to session state
-                    st.session_state.messages.append(
-                        {
-                            "role": "user", 
-                            "content": [{
-                                "type": "text",
-                                "text": f"Extracted text: {extracted_text}"
-                            }]
-                        }
-                    )
-                    st.success("Image uploaded and text extracted successfully!")
+                    if extracted_text:
+                        st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
+                        st.success("Image uploaded and text extracted successfully!")
 
             cols_img = st.columns(2)
             with cols_img[0]:
