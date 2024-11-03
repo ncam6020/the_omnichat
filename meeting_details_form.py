@@ -1,5 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components
+from streamlit_quill import st_quill
 
 def render_meeting_details_form():
     # --- Meeting Details Form ---
@@ -12,15 +12,8 @@ def render_meeting_details_form():
         attendees = st.text_area("Attendees:")
         
         # Adding a new field for rich text notes with bullet support
-        notes = components.html(
-            """
-            <div contenteditable="true" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow: auto;">
-                <p>Enter your notes here...</p>
-            </div>
-            """,
-            height=250
-        )
-        
+        notes = st_quill(label="Notes:", placeholder="Enter your notes here...", key="notes")
+
         submit_button = st.form_submit_button(label='Submit Meeting Details')
 
         if submit_button:
