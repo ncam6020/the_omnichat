@@ -14,11 +14,11 @@ dotenv.load_dotenv()
 
 # Only use OpenAI models
 openai_models = [
-    "gpt-4o", 
+    "gpt-4o-mini", 
     "gpt-4-turbo", 
     "gpt-3.5-turbo-16k", 
     "gpt-4",
-    "gpt-4o-mini",
+    "gpt-4o",
     "gpt-4-32k",
 ]
 
@@ -71,17 +71,21 @@ def extract_text_from_image(image, api_key):
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    # Use OpenAI's image interpretation capabilities
-    response = openai.Image.create(
-        api_key=api_key,
-        prompt="Extract text from the provided image.",
-        image=img_str,
-        n=1,
-        size="1024x1024"
+    # Use OpenAI's GPT model to interpret the image content
+    client = OpenAI(api_key=api_key)
+    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are an expert at reading and transcribing handwritten notes."},
+            {"role": "user", "content": f"Image data: {img_str}. {prompt}"}
+        ],
+        temperature=0.5,
+        max_tokens=1000
     )
 
-    # Assuming that the response contains the extracted text
-    extracted_text = response['data'][0]['text']
+    extracted_text = response.choices[0].message["content"].strip()
     return extracted_text
 
 def main():
