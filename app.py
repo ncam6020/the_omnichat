@@ -72,20 +72,18 @@ def extract_text_from_image(image, api_key):
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
     # Use OpenAI's GPT model to interpret the image content
-    client = OpenAI(api_key=api_key)
+    client = openai
+    client.api_key = api_key
     prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
 
-    response = client.chat.completions.create(
+    response = client.Completion.create(
         model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are an expert at reading and transcribing handwritten notes."},
-            {"role": "user", "content": f"Image data: {img_str}. {prompt}"}
-        ],
+        prompt=f"You are an expert at reading and transcribing handwritten notes. Here is the base64 image data: {img_str}. {prompt}",
         temperature=0.5,
         max_tokens=1000
     )
 
-    extracted_text = response.choices[0].message["content"].strip()
+    extracted_text = response.choices[0].text.strip()
     return extracted_text
 
 def main():
