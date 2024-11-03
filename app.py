@@ -153,7 +153,8 @@ def main():
                     )
 
         # --- Meeting Details Form ---
-        render_meeting_details_form(include_time=False, include_cc=False, include_next_meeting_date=False)
+        render_meeting_details_form()
+
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
