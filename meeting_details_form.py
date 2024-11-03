@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_quill import st_quill
 
 def render_meeting_details_form():
     # --- Meeting Details Form ---
@@ -13,26 +12,21 @@ def render_meeting_details_form():
         
         submit_button = st.form_submit_button(label='Submit Meeting Details')
 
-    # Adding the rich text editor outside the form
-    notes = st_quill(label="Notes:", placeholder="Enter your notes here...", key="notes")
-
-    # Handle form submission
-    if submit_button:
-        meeting_details = {
-            "Meeting Date": meeting_date,
-            "Project Name": project_name,
-            "Project Number": project_number,
-            "Meeting Location": meeting_location,
-            "Attendees": attendees,
-            "Notes": notes
-        }
-        st.session_state.messages.append(
-            {
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": f"Meeting Details: {meeting_details}"
-                }]
+        if submit_button:
+            meeting_details = {
+                "Meeting Date": meeting_date,
+                "Project Name": project_name,
+                "Project Number": project_number,
+                "Meeting Location": meeting_location,
+                "Attendees": attendees
             }
-        )
-        st.success("Meeting details submitted successfully!")
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": [{
+                        "type": "text",
+                        "text": f"Meeting Details: {meeting_details}"
+                    }]
+                }
+            )
+            st.success("Meeting details submitted successfully!")
