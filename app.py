@@ -66,24 +66,23 @@ def get_image_base64(image_raw):
     return base64.b64encode(img_byte).decode('utf-8')
 
 def extract_text_from_image(image, api_key):
-    # Convert the image to bytes
+    # Convert the image to a base64 string
     buffered = BytesIO()
     image.save(buffered, format="PNG")
-    img_bytes = buffered.getvalue()
+    img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    try:
-        # Use OpenAI's OCR with GPT-3/4 capability to extract text from the image
-        response = openai.Image.create(
-            file=img_bytes,
-            purpose="edit",
-            api_key=api_key
-        )
-        # Assuming response contains the extracted text in a specific key
-        extracted_text = response['data'][0]['caption']  # This will depend on the response schema
-        return extracted_text
-    except Exception as e:
-        st.error(f"Error during image text extraction: {str(e)}")
-        return ""
+    # Use OpenAI's image interpretation capabilities
+    response = openai.Image.create(
+        api_key=api_key,
+        prompt="Extract text from the provided image.",
+        image=img_str,
+        n=1,
+        size="1024x1024"
+    )
+
+    # Assuming that the response contains the extracted text
+    extracted_text = response['data'][0]['text']
+    return extracted_text
 
 def main():
     # --- Page Config ---
@@ -166,9 +165,8 @@ def main():
                     # Extract text from image using OpenAI API
                     extracted_text = extract_text_from_image(raw_img, openai_api_key)
                     # Append extracted text to session state
-                    if extracted_text:
-                        st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
-                        st.success("Image uploaded and text extracted successfully!")
+                    st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
+                    st.success("Image uploaded and text extracted successfully!")
 
             cols_img = st.columns(2)
             with cols_img[0]:
