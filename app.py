@@ -70,7 +70,12 @@ def main():
     with st.sidebar:
         default_openai_api_key = os.getenv("OPENAI_API_KEY") if os.getenv("OPENAI_API_KEY") is not None else ""  # only for development environment, otherwise it should return None
         st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
-    
+        st.divider()
+        
+        # Add button to view/update meeting form
+        if st.button('View/Update Meeting Form'):
+            st.session_state.update_form = True
+
     # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
     openai_api_key = st.session_state.openai_api_key
@@ -83,6 +88,9 @@ def main():
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
+        # --- Meeting Details Form ---
+        render_meeting_details_form()
+
         # Displaying the previous messages if there are any
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
@@ -94,7 +102,6 @@ def main():
 
         # Side bar model options and inputs
         with st.sidebar:
-            st.divider()
             model = st.selectbox("Select a model:", openai_models, index=0)
             with st.expander("⚙️ Model parameters"):
                 model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
@@ -151,10 +158,6 @@ def main():
                         key="camera_img",
                         on_change=add_image_to_messages,
                     )
-
-        # --- Meeting Details Form ---
-        render_meeting_details_form()
-
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
