@@ -7,6 +7,7 @@ from PIL import Image
 import base64
 from io import BytesIO
 from meeting_details_form import render_meeting_details_form
+from upload_transcript import upload_transcript
 
 dotenv.load_dotenv()
 
@@ -21,7 +22,6 @@ openai_models = [
 ]
 
 # Function to query and stream the response from OpenAI
-
 def stream_llm_response(model_params, api_key):
     response_message = ""
     client = OpenAI(api_key=api_key)
@@ -46,7 +46,6 @@ def stream_llm_response(model_params, api_key):
         ]})
 
 # Function to convert file to base64
-
 def get_image_base64(image_raw):
     buffered = BytesIO()
     image_raw.save(buffered, format=image_raw.format)
@@ -75,6 +74,9 @@ def main():
         # Add button to view/update meeting form
         if st.button('View/Update Meeting Form'):
             st.session_state.update_form = True
+
+        # Upload transcript functionality
+        upload_transcript()
 
     # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
@@ -135,7 +137,8 @@ def main():
                             "role": "user", 
                             "content": [{
                                 "type": "image_url",
-                                "image_url": {"url": f"data:{img_type};base64,{img}"}
+                                "image_url": {"url": f"data:{img_type};base64,{img}"
+                                }
                             }]
                         }
                     )
