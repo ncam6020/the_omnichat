@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 def render_meeting_details_form():
     # --- Meeting Details Form ---
@@ -9,8 +10,16 @@ def render_meeting_details_form():
         project_number = st.text_input("Project Number:")
         meeting_location = st.text_input("Meeting Location:")
         attendees = st.text_area("Attendees:")
-        # Adding a new field for notes with text editing capabilities
-        notes = st.text_area("Notes:", placeholder="Enter notes here...")
+        
+        # Adding a new field for rich text notes with bullet support
+        notes = components.html(
+            """
+            <div contenteditable="true" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow: auto;">
+                <p>Enter your notes here...</p>
+            </div>
+            """,
+            height=250
+        )
         
         submit_button = st.form_submit_button(label='Submit Meeting Details')
 
