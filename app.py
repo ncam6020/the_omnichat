@@ -6,6 +6,7 @@ import os
 from PIL import Image
 import base64
 from io import BytesIO
+from meeting_details_form import render_meeting_details_form
 
 dotenv.load_dotenv()
 
@@ -150,6 +151,9 @@ def main():
                         key="camera_img",
                         on_change=add_image_to_messages,
                     )
+
+        # --- Meeting Details Form ---
+        render_meeting_details_form()
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
