@@ -65,27 +65,6 @@ def get_image_base64(image_raw):
 
     return base64.b64encode(img_byte).decode('utf-8')
 
-def extract_text_from_image(image, api_key):
-    # Convert the image to a base64 string
-    buffered = BytesIO()
-    image.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-
-    # Use OpenAI's GPT model to interpret the image content
-    client = openai
-    client.api_key = api_key
-    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
-
-    response = client.Completion.create(
-        model="gpt-4",
-        prompt=f"You are an expert at reading and transcribing handwritten notes. Here is the base64 image data: {img_str}. {prompt}",
-        temperature=0.5,
-        max_tokens=1000
-    )
-
-    extracted_text = response.choices[0].text.strip()
-    return extracted_text
-
 def main():
     # --- Page Config ---
     st.set_page_config(
@@ -164,11 +143,17 @@ def main():
                 if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
                     img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
                     raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                    # Extract text from image using OpenAI API
-                    extracted_text = extract_text_from_image(raw_img, openai_api_key)
-                    # Append extracted text to session state
-                    st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
-                    st.success("Image uploaded and text extracted successfully!")
+                    # Append image to the session, view it in the chat
+                    st.session_state.messages.append(
+                        {
+                            "role": "user", 
+                            "content": [{
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{img_type};base64,{get_image_base64(raw_img)}"}
+                            }]
+                        }
+                    )
+                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Image Text' button to extract the text.")
 
             cols_img = st.columns(2)
             with cols_img[0]:
@@ -188,6 +173,19 @@ def main():
                         key="camera_img",
                         on_change=add_image_to_messages,
                     )
+
+            # Button to extract text from the uploaded image
+            if st.button("Transcribe Image Text"):
+                if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+                    raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
+                    st.session_state.messages.append(
+                        {
+                            "role": "user",
+                            "content": [{"type": "text", "text": prompt}]
+                        }
+                    )
+                    st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
