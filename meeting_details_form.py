@@ -11,27 +11,28 @@ def render_meeting_details_form():
         meeting_location = st.text_input("Meeting Location:")
         attendees = st.text_area("Attendees:")
         
-        # Adding a new field for rich text notes with bullet support
-        notes = st_quill(label="Notes:", placeholder="Enter your notes here...", key="notes")
-
         submit_button = st.form_submit_button(label='Submit Meeting Details')
 
-        if submit_button:
-            meeting_details = {
-                "Meeting Date": meeting_date,
-                "Project Name": project_name,
-                "Project Number": project_number,
-                "Meeting Location": meeting_location,
-                "Attendees": attendees,
-                "Notes": notes
+    # Adding the rich text editor outside the form
+    notes = st_quill(label="Notes:", placeholder="Enter your notes here...", key="notes")
+
+    # Handle form submission
+    if submit_button:
+        meeting_details = {
+            "Meeting Date": meeting_date,
+            "Project Name": project_name,
+            "Project Number": project_number,
+            "Meeting Location": meeting_location,
+            "Attendees": attendees,
+            "Notes": notes
+        }
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": f"Meeting Details: {meeting_details}"
+                }]
             }
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": [{
-                        "type": "text",
-                        "text": f"Meeting Details: {meeting_details}"
-                    }]
-                }
-            )
-            st.success("Meeting details submitted successfully!")
+        )
+        st.success("Meeting details submitted successfully!")
