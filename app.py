@@ -152,7 +152,7 @@ def main():
                         on_change=add_image_to_messages,
                     )
 
-        # --- meeting_details_form.py ---
+        # --- Meeting Details Form ---
         render_meeting_details_form()
 
         # Chat input
