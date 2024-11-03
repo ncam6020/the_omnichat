@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
 def render_meeting_details_form():
     if 'form_filled' not in st.session_state or st.session_state.get('update_form', False):
@@ -12,16 +11,9 @@ def render_meeting_details_form():
             meeting_location = st.text_input("Meeting Location:")
             attendees = st.text_area("Attendees:")
             
-            # Adding a new field for rich text notes with bullet support
-            notes = components.html(
-                """
-                <div contenteditable="true" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow: auto;">
-                    <p>Enter your notes here...</p>
-                </div>
-                """,
-                height=250
-            )
-            
+            # Adding a new field for rich text notes
+            notes = st.text_area("Notes (You can paste bullets or lists here):")
+
             submit_button = st.form_submit_button(label='Submit Meeting Details')
 
             if submit_button:
@@ -52,7 +44,4 @@ def render_meeting_details_form():
 with st.sidebar:
     if st.button('View/Update Meeting Form'):
         st.session_state.update_form = True
-
-# Render the form based on the state
-if st.session_state.get('update_form', False) or 'form_filled' not in st.session_state:
-    render_meeting_details_form()
+        render_meeting_details_form()
