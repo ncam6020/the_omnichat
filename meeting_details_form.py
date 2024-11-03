@@ -5,25 +5,23 @@ def render_meeting_details_form():
     with st.form(key='meeting_details_form'):
         st.header("Meeting Details")
         meeting_date = st.date_input("Meeting Date:")
-        # meeting_time = st.time_input("Meeting Time:")  # Commented out
         project_name = st.text_input("Project Name:")
         project_number = st.text_input("Project Number:")
         meeting_location = st.text_input("Meeting Location:")
         attendees = st.text_area("Attendees:")
-        # next_meeting_date = st.date_input("Next Meeting Date:")  # Commented out
-        # cc = st.text_area("Cc:")  # Commented out
+        # Adding a new field for notes with text editing capabilities
+        notes = st.text_area("Notes:", placeholder="Enter notes here...")
+        
         submit_button = st.form_submit_button(label='Submit Meeting Details')
 
         if submit_button:
             meeting_details = {
                 "Meeting Date": meeting_date,
-                # "Meeting Time": meeting_time,  # Commented out
                 "Project Name": project_name,
                 "Project Number": project_number,
                 "Meeting Location": meeting_location,
                 "Attendees": attendees,
-                # "Next Meeting Date": next_meeting_date,  # Commented out
-                # "Cc": cc  # Commented out
+                "Notes": notes
             }
             st.session_state.messages.append(
                 {
