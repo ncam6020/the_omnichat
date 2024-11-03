@@ -52,4 +52,7 @@ def render_meeting_details_form():
 with st.sidebar:
     if st.button('View/Update Meeting Form'):
         st.session_state.update_form = True
-        render_meeting_details_form()
+
+# Render the form based on the state
+if st.session_state.get('update_form', False) or 'form_filled' not in st.session_state:
+    render_meeting_details_form()
