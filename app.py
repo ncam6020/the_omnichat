@@ -25,6 +25,17 @@ openai_models = [
 def stream_llm_response(model_params, api_key):
     response_message = ""
     client = OpenAI(api_key=api_key)
+
+    # Add transcript context if available
+    if "transcript_context" in st.session_state and "messages" in st.session_state:
+        st.session_state.messages.insert(0, {
+            "role": "user",
+            "content": [{
+                "type": "text",
+                "text": f"Transcript context: {st.session_state.transcript_context}"
+            }]
+        })
+
     for chunk in client.chat.completions.create(
         model=model_params["model"] if "model" in model_params else "gpt-4o",
         messages=st.session_state.messages,
@@ -76,7 +87,7 @@ def main():
             st.session_state.update_form = True
 
         # Upload transcript functionality
-        upload_transcript()
+        upload_transcript(display_in_chat=False)
 
     # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
