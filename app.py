@@ -142,17 +142,24 @@ def main():
                 if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
                     img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
                     raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                    img = get_image_base64(raw_img)
+                    # Extract text from image using OpenAI API
+                    extracted_text = client.chat.completions.create(
+                        model="gpt-3.5-turbo", 
+                        messages=[{"role": "user", "content": "Extract the text from this image."}],
+                        input=raw_img,
+                        temperature=0.0
+                    )
+                    # Append extracted text to session state
                     st.session_state.messages.append(
                         {
                             "role": "user", 
                             "content": [{
-                                "type": "image_url",
-                                "image_url": {"url": f"data:{img_type};base64,{img}"
-                                }
+                                "type": "text",
+                                "text": f"Extracted text: {extracted_text}"
                             }]
                         }
                     )
+                    st.success("Image uploaded and text extracted successfully!")
 
             cols_img = st.columns(2)
             with cols_img[0]:
