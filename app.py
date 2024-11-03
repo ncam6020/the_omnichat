@@ -1,4 +1,4 @@
-# Cleaned up version of the Minutes in a Minute Streamlit app
+# Cleaned up version of the OmniChat Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
@@ -6,7 +6,6 @@ import os
 from PIL import Image
 import base64
 from io import BytesIO
-from meeting_details_form import render_meeting_details_form
 
 dotenv.load_dotenv()
 
@@ -57,14 +56,14 @@ def get_image_base64(image_raw):
 def main():
     # --- Page Config ---
     st.set_page_config(
-        page_title="Minutes in a Minute",
-        page_icon="⏱️",
+        page_title="The OmniChat",
+        page_icon="🤖",
         layout="centered",
         initial_sidebar_state="expanded",
     )
 
     # --- Header ---
-    st.markdown("""<h1 style="text-align: center; color: #6ca395;">⏱️ <i>Minutes in a Minute</i> 💬</h1>""", unsafe_allow_html=True)
+    st.markdown("""<h1 style="text-align: center; color: #6ca395;">🤖 <i>The OmniChat</i> 💬</h1>""", unsafe_allow_html=True)
 
     # --- Side Bar ---
     with st.sidebar:
@@ -151,9 +150,6 @@ def main():
                         key="camera_img",
                         on_change=add_image_to_messages,
                     )
-
-        # --- Meeting Details Form ---
-        render_meeting_details_form()
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
