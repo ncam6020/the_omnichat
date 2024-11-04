@@ -1,4 +1,4 @@
-# Cleaned up version of the OmniChat Streamlit app
+// # Cleaned up version of the OmniChat Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
@@ -137,7 +137,7 @@ def main():
             st.divider()
 
             # Image Upload
-            st.write(f"### **🖼️ Add an image:**")
+            st.write(f"### **🖼️ Add Handwritten Notes:**")
 
             def add_image_to_messages():
                 if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
@@ -153,7 +153,7 @@ def main():
                             }]
                         }
                     )
-                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Image Text' button to extract the text.")
+                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Handwritten Notes' button to extract the text.")
 
             cols_img = st.columns(2)
             with cols_img[0]:
@@ -165,17 +165,18 @@ def main():
                     on_change=add_image_to_messages,
                 )
 
-            with cols_img[1]:                    
-                st.checkbox("Activate camera", key="activate_camera")
-                if st.session_state.activate_camera:
-                    st.camera_input(
-                        "Take a picture", 
-                        key="camera_img",
-                        on_change=add_image_to_messages,
-                    )
+            # Commented out camera activation functionality
+            # with cols_img[1]:                    
+            #     st.checkbox("Activate camera", key="activate_camera")
+            #     if st.session_state.activate_camera:
+            #         st.camera_input(
+            #             "Take a picture", 
+            #             key="camera_img",
+            #             on_change=add_image_to_messages,
+            #         )
 
             # Button to extract text from the uploaded image
-            if st.button("Transcribe Image Text"):
+            if st.button("Transcribe Handwritten Notes"):
                 if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
                     raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
                     prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
@@ -188,7 +189,7 @@ def main():
                     st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
 
         # Chat input
-        if prompt := st.chat_input("Hi! Ask me anything..."):
+        if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
             st.session_state.messages.append(
                 {
                     "role": "user", 
