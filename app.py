@@ -67,11 +67,6 @@ def get_image_base64(image_raw):
     return base64.b64encode(img_byte).decode('utf-8')
 
 def main():
-    # Ensure messages are initialized in session state
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-    if 'update_form' not in st.session_state:
-        st.session_state.update_form = False
     # --- Page Config ---
     st.set_page_config(
         page_title="Minutes in about a Minute",
@@ -95,15 +90,6 @@ def main():
 
         # Upload transcript functionality
         upload_transcript(display_in_chat=False)
-        st.divider()
-
-        # Ensure the session state messages are displayed if there are any existing messages
-        if st.session_state.messages:
-            for message in st.session_state.messages:
-                with st.chat_message(message["role"]):
-                    for content in message["content"]:
-                        if content["type"] == "text":
-                            st.write(content["text"])
 
         st.divider()
 
@@ -134,4 +120,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-  
