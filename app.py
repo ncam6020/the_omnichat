@@ -9,6 +9,7 @@ from io import BytesIO
 from meeting_details_form import render_meeting_details_form
 from upload_transcript import upload_transcript
 import openai
+import docx
 
 dotenv.load_dotenv()
 
@@ -89,6 +90,43 @@ def main():
 
         # Upload transcript functionality
         upload_transcript(display_in_chat=False)
+
+        st.divider()
+
+        # File Upload for Word Documents
+        st.write(f"### **📄 Upload a Word File:**")
+        word_file = st.file_uploader(
+            "Upload a Word document:",
+            type=["docx"],
+            accept_multiple_files=False,
+            key="uploaded_word_file",
+        )
+
+        if word_file is not None:
+            st.success("Word file uploaded successfully! Now you can use the 'Show Transcript Text' button to view the contents.")
+            
+            # Button to extract and display text from the uploaded Word file
+            if st.button("Show Transcript Text"):
+                doc = docx.Document(word_file)
+                transcript_text = "\n".join([para.text for para in doc.paragraphs])
+
+                prompt = "Here is the transcript from the uploaded Word document:\n" + transcript_text
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": prompt}]
+                    }
+                )
+                st.success("Transcript text added. The assistant will now process it.")
+
+                # Explicitly trigger the assistant to generate a response right away in the main content area
+                with st.chat_message("assistant"):
+                    st.write_stream(
+                        stream_llm_response(
+                            model_params=model_params,
+                            api_key=openai_api_key
+                        )
+                    )
 
     # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
