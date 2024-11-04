@@ -143,15 +143,7 @@ def main():
     else:
         client = OpenAI(api_key=openai_api_key)
 
-        # Debug API key being used (truncated for safety)
-        st.write(f"Using API Key: {openai_api_key[:8]}...")  # Truncated key for safety
-
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        # --- Meeting Details Form ---
-        render_meeting_details_form()
-
+        
         # Displaying the previous messages if there are any
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
@@ -175,7 +167,7 @@ def main():
                                 api_key=openai_api_key
                             )
                         )
-                    except openai.error.AuthenticationError:
+                    except openai.error.OpenAIError:
                         st.error("Authentication Error: Please check your OpenAI API Key.")
 
         # Chat input
