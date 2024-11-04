@@ -1,4 +1,4 @@
-# Cleaned up version of the OmniChat Streamlit app
+// # Cleaned up version of the MinutesInAMinute Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
@@ -68,14 +68,14 @@ def get_image_base64(image_raw):
 def main():
     # --- Page Config ---
     st.set_page_config(
-        page_title="The OmniChat",
+        page_title="Minutes in about a Minute",
         page_icon="🤖",
         layout="centered",
         initial_sidebar_state="expanded",
     )
 
     # --- Header ---
-    st.markdown("""<h1 style="text-align: center; color: #6ca395;">🤖 <i>The OmniChat</i> 💬</h1>""", unsafe_allow_html=True)
+    st.markdown("""<h1 style="text-align: center; color: #6ca395;">🤖 <i>Minutes in a Minute</i> 💬</h1>""", unsafe_allow_html=True)
 
     # --- Side Bar ---
     with st.sidebar:
