@@ -82,9 +82,11 @@ def main():
         st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
         st.divider()
         
-        # Add button to view/update meeting form
-        if st.button('View/Update Meeting Form'):
+        # Add button for meeting form
+        if st.button('Key Meeting Data'):
             st.session_state.update_form = True
+        
+        st.divider()
 
         # Upload transcript functionality
         upload_transcript(display_in_chat=False)
