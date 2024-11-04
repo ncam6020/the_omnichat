@@ -93,41 +93,41 @@ def main():
 
         st.divider()
 
-        # File Upload for Word Documents
-        st.write(f"### **📄 Upload a Word File:**")
-        word_file = st.file_uploader(
-            "Upload a Word document:",
-            type=["docx"],
-            accept_multiple_files=False,
-            key="uploaded_word_file",
-        )
+        # File Upload for Word Documents (Commented Out)
+        # st.write(f"### **📄 Upload a Word File:**")
+        # word_file = st.file_uploader(
+        #     "Upload a Word document:",
+        #     type=["docx"],
+        #     accept_multiple_files=False,
+        #     key="uploaded_word_file",
+        # )
 
-        if word_file is not None:
-            # Extract and display text from the uploaded Word file
-            doc = docx.Document(word_file)
-            transcript_text = "\n".join([para.text for para in doc.paragraphs])
+        # if word_file is not None:
+        #     # Extract and display text from the uploaded Word file
+        #     doc = docx.Document(word_file)
+        #     transcript_text = "\n".join([para.text for para in doc.paragraphs])
 
-            prompt = "Here is the transcript from the uploaded Word document:\n" + transcript_text
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": prompt}]
-                }
-            )
-            st.success("Word file uploaded successfully! Transcript text has been added, and the assistant will now process it.")
+        #     prompt = "Here is the transcript from the uploaded Word document:\n" + transcript_text
+        #     st.session_state.messages.append(
+        #         {
+        #             "role": "user",
+        #             "content": [{"type": "text", "text": prompt}]
+        #         }
+        #     )
+        #     st.success("Word file uploaded successfully! Transcript text has been added, and the assistant will now process it.")
 
-            # Explicitly trigger the assistant to generate a response right away in the main content area
-            model_params = {
-                "model": "gpt-4o",  # Default model for processing
-                "temperature": 0.3,
-            }
-            with st.chat_message("assistant"):
-                st.write_stream(
-                    stream_llm_response(
-                        model_params=model_params,
-                        api_key=default_openai_api_key
-                    )
-                )
+        #     # Explicitly trigger the assistant to generate a response right away in the main content area
+        #     model_params = {
+        #         "model": "gpt-4o",  # Default model for processing
+        #         "temperature": 0.3,
+        #     }
+        #     with st.chat_message("assistant"):
+        #         st.write_stream(
+        #             stream_llm_response(
+        #                 model_params=model_params,
+        #                 api_key=default_openai_api_key
+        #             )
+        #         )
 
         st.divider()
 
