@@ -83,12 +83,14 @@ def main():
         st.divider()
         
         # Add button for meeting form
+        st.write(f"### **🖼️ Add Meeting Details:**")
         if st.button('Key Meeting Data'):
             st.session_state.update_form = True
         
         st.divider()
-
-        # Upload transcript functionality
+      
+        # Upload MSWord Transcripts
+        st.write(f"### **🖼️ Add Teams Transcripts:**")
         upload_transcript(display_in_chat=False)
 
         st.divider()
