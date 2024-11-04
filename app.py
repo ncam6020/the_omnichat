@@ -132,11 +132,11 @@ def main():
         if st.button('View/Update Meeting Form'):
             st.session_state.update_form = True
 
-        # Step 3 - Upload Transcript
+        # Step 2 - Upload Transcript
         st.subheader("Step 2 - Upload Transcript")
         upload_transcript(display_in_chat=False)
 
-        # Step 4 - Add Handwritten Notes
+        # Step 3 - Add Handwritten Notes
         st.subheader("Step 3 - Add Handwritten Notes")
 
     # --- Main Content ---
@@ -146,7 +146,7 @@ def main():
         st.write("#")
         st.warning("⬅️ Please introduce an API Key to continue...")
     else:
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=openai_api_key)
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
