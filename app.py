@@ -83,14 +83,14 @@ def main():
         st.divider()
         
         # Add button for meeting form
-        st.write(f"### **🖼️ Add Meeting Details:**")
         if st.button('Key Meeting Data'):
             st.session_state.update_form = True
         
         st.divider()
       
         # Upload MSWord Transcripts
-        st.write(f"### **🖼️ Add Teams Transcripts:**")
+        st.write(f"### **🖼️ Add Handwritten Notes:**")
+        # Upload transcript functionality
         upload_transcript(display_in_chat=False)
 
         st.divider()
@@ -121,30 +121,6 @@ def main():
             key="uploaded_img",
             on_change=add_image_to_messages,
         )
-
-        if st.button("Transcribe Handwritten Notes"):
-            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                prompt = "Please transcribe my handwritten notes to text."
-                st.session_state.messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                )
-                st.success("Image transcription prompt added. The assistant will now process it.")
-
-                # Explicitly trigger the assistant to generate a response right away in the main content area
-                with st.chat_message("assistant"):
-                    st.write_stream(
-                        stream_llm_response(
-                            model_params={
-                                "model": st.session_state.get("model", "gpt-4o"),
-                                "temperature": st.session_state.get("temperature", 0.3)
-                            },
-                            api_key=default_openai_api_key
-                        )
-                    )
 
         st.divider()
 
@@ -193,6 +169,28 @@ def main():
                     elif content["type"] == "image_url":      
                         st.image(content["image_url"]["url"])
 
+        # Button to extract text from the uploaded image
+        if st.button("Transcribe Handwritten Notes"):
+            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                prompt = "Please transcribe my handwritten notes to text."
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": prompt}]
+                    }
+                )
+                st.success("Image transcription prompt added. The assistant will now process it.")
+
+                # Explicitly trigger the assistant to generate a response right away in the main content area
+                with st.chat_message("assistant"):
+                    st.write_stream(
+                        stream_llm_response(
+                            model_params=model_params,
+                            api_key=openai_api_key
+                        )
+                    )
+
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
             st.session_state.messages.append(
@@ -219,4 +217,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
