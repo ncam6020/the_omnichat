@@ -155,6 +155,15 @@ def main():
                     )
                     st.success("Image uploaded successfully! Now you can use the 'Transcribe Handwritten Notes' button to extract the text.")
 
+                    # Re-render messages to immediately show the image upload
+                    for message in st.session_state.messages:
+                        with st.chat_message(message["role"]):
+                            for content in message["content"]:
+                                if content["type"] == "text":
+                                    st.write(content["text"])
+                                elif content["type"] == "image_url":
+                                    st.image(content["image_url"]["url"])
+
             cols_img = st.columns(2)
             with cols_img[0]:
                 st.file_uploader(
@@ -187,6 +196,15 @@ def main():
                         }
                     )
                     st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
+
+                    # Re-render messages to immediately show the transcription prompt
+                    for message in st.session_state.messages:
+                        with st.chat_message(message["role"]):
+                            for content in message["content"]:
+                                if content["type"] == "text":
+                                    st.write(content["text"])
+                                elif content["type"] == "image_url":
+                                    st.image(content["image_url"]["url"])
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
