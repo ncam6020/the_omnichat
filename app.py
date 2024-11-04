@@ -1,4 +1,4 @@
-# Cleaned up version of the Minutes in a Minute Streamlit app
+# Cleaned up version of the OmniChat Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
@@ -70,58 +70,42 @@ def extract_text_from_image(image, api_key):
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
-
     # Use OpenAI's GPT model to interpret the image content
-    client = OpenAI(api_key=api_key)
+    client = openai
+    client.api_key = api_key
     prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
-
-    response = client.chat.completions.create(
+    response = client.Completion.create(
         model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are an expert at reading and transcribing handwritten notes."},
-            {"role": "user", "content": f"Image data: {img_str}. {prompt}"}
-        ],
+        prompt=f"You are an expert at reading and transcribing handwritten notes. Here is the base64 image data: {img_str}. {prompt}",
         temperature=0.5,
         max_tokens=1000
     )
-
-    extracted_text = response.choices[0].message["content"].strip()
+    extracted_text = response.choices[0].text.strip()
     return extracted_text
-
 def main():
     # --- Page Config ---
     st.set_page_config(
-        page_title="Minutes in a Minute",
-        page_icon="⏱️",
+        page_title="The OmniChat",
+        page_icon="🤖",
         layout="centered",
         initial_sidebar_state="expanded",
     )
 
     # --- Header ---
-    st.markdown("""<h1 style="text-align: center; color: #6ca395;">⏱️ <i>Minutes in a Minute</i> 💬</h1>""", unsafe_allow_html=True)
+    st.markdown("""<h1 style="text-align: center; color: #6ca395;">🤖 <i>The OmniChat</i> 💬</h1>""", unsafe_allow_html=True)
 
     # --- Side Bar ---
     with st.sidebar:
         default_openai_api_key = os.getenv("OPENAI_API_KEY") if os.getenv("OPENAI_API_KEY") is not None else ""  # only for development environment, otherwise it should return None
         st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
         st.divider()
-        
-        # Step 1 - Add Meeting Details
-        st.subheader("Step 1 - Add Meeting Details")
+
+        # Add button to view/update meeting form
         if st.button('View/Update Meeting Form'):
             st.session_state.update_form = True
 
-        # Step 2 - Add Copy&Paste Notes
-        st.subheader("Step 2 - Add Copy&Paste Notes")
-        # Placeholder for notes input (additional feature implementation needed)
-        st.text_area("Add your notes here (copy & paste):", key='copy_paste_notes')
-
-        # Step 3 - Upload Transcript
-        st.subheader("Step 3 - Upload Transcript")
+        # Upload transcript functionality
         upload_transcript(display_in_chat=False)
-
-        # Step 4 - Add Handwritten Notes
-        st.subheader("Step 4 - Add Handwritten Notes")
 
     # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
@@ -181,6 +165,17 @@ def main():
                     # Append extracted text to session state
                     st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
                     st.success("Image uploaded and text extracted successfully!")
+                    # Append image to the session, view it in the chat
+                    st.session_state.messages.append(
+                        {
+                            "role": "user", 
+                            "content": [{
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{img_type};base64,{get_image_base64(raw_img)}"}
+                            }]
+                        }
+                    )
+                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Image Text' button to extract the text.")
 
             cols_img = st.columns(2)
             with cols_img[0]:
@@ -201,6 +196,18 @@ def main():
                         on_change=add_image_to_messages,
                     )
 
+            # Button to extract text from the uploaded image
+            if st.button("Transcribe Image Text"):
+                if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+                    raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
+                    st.session_state.messages.append(
+                        {
+                            "role": "user",
+                            "content": [{"type": "text", "text": prompt}]
+                        }
+                    )
+                    st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
             st.session_state.messages.append(
@@ -212,7 +219,7 @@ def main():
                     }]
                 }
             )
-            
+
             # Display the new messages
             with st.chat_message("user"):
                 st.markdown(prompt)
