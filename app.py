@@ -67,6 +67,9 @@ def get_image_base64(image_raw):
     return base64.b64encode(img_byte).decode('utf-8')
 
 def main():
+    # Ensure messages are initialized in session state
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
     # --- Page Config ---
     st.set_page_config(
         page_title="Minutes in about a Minute",
