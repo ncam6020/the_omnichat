@@ -67,9 +67,6 @@ def get_image_base64(image_raw):
     return base64.b64encode(img_byte).decode('utf-8')
 
 def main():
-    # Ensure messages are initialized in session state
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
     # --- Page Config ---
     st.set_page_config(
         page_title="Minutes in about a Minute",
@@ -125,6 +122,54 @@ def main():
             on_change=add_image_to_messages,
         )
 
+        st.divider()
+
+        # Sidebar Model Options and Inputs
+        model = st.selectbox("Select a model:", openai_models, index=0)
+        with st.expander("⚙️ Model parameters"):
+            model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
+
+        model_params = {
+            "model": model,
+            "temperature": model_temp,
+        }
+
+        def reset_conversation():
+            if "messages" in st.session_state and len(st.session_state.messages) > 0:
+                st.session_state.pop("messages", None)
+
+        st.button(
+            "🗑️ Reset conversation", 
+            on_click=reset_conversation,
+        )
+
+        st.divider()
+
+    # --- Main Content Configuration ---
+    # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
+    openai_api_key = st.session_state.openai_api_key
+    if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
+        st.write("#")
+        st.warning("⬅️ Please introduce an API Key to continue...")
+    else:
+        client = OpenAI(api_key=openai_api_key)
+
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # --- Meeting Details Form ---
+        render_meeting_details_form()
+
+        # Displaying the previous messages if there are any
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                for content in message["content"]:
+                    if content["type"] == "text":
+                        st.write(content["text"])
+                    elif content["type"] == "image_url":      
+                        st.image(content["image_url"]["url"])
+
+        # Button to extract text from the uploaded image
         if st.button("Transcribe Handwritten Notes"):
             if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
                 raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
@@ -137,41 +182,14 @@ def main():
                 )
                 st.success("Image transcription prompt added. The assistant will now process it.")
 
-    # --- Main Content Configuration ---
-    # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
-    openai_api_key = st.session_state.openai_api_key
-    if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
-        st.write("#")
-        st.warning("⬅️ Please introduce an API Key to continue...")
-    else:
-        client = OpenAI(api_key=openai_api_key)
-
-        
-        # Displaying the previous messages if there are any
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                for content in message["content"]:
-                    if content["type"] == "text":
-                        st.write(content["text"])
-                    elif content["type"] == "image_url":      
-                        st.image(content["image_url"]["url"])
-
-        # If there's a transcription request, handle it here in the main content
-        if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-            if st.session_state.messages and st.session_state.messages[-1]["content"][0]["text"] == "Please transcribe my handwritten notes to text.":
+                # Explicitly trigger the assistant to generate a response right away in the main content area
                 with st.chat_message("assistant"):
-                    try:
-                        st.write_stream(
-                            stream_llm_response(
-                                model_params={
-                                    "model": st.session_state.get("model", "gpt-4o"),
-                                    "temperature": st.session_state.get("temperature", 0.3)
-                                },
-                                api_key=openai_api_key
-                            )
+                    st.write_stream(
+                        stream_llm_response(
+                            model_params=model_params,
+                            api_key=openai_api_key
                         )
-                    except openai.error.OpenAIError:
-                        st.error("Authentication Error: Please check your OpenAI API Key.")
+                    )
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
@@ -190,15 +208,12 @@ def main():
                 st.markdown(prompt)
 
             with st.chat_message("assistant"):
-                try:
-                    st.write_stream(
-                        stream_llm_response(
-                            model_params=model_params, 
-                            api_key=openai_api_key
-                        )
+                st.write_stream(
+                    stream_llm_response(
+                        model_params=model_params, 
+                        api_key=openai_api_key
                     )
-                except openai.error.AuthenticationError:
-                    st.error("Authentication Error: Please check your OpenAI API Key.")
+                )
 
 if __name__ == "__main__":
     main()
