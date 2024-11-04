@@ -155,15 +155,6 @@ def main():
                     )
                     st.success("Image uploaded successfully! Now you can use the 'Transcribe Handwritten Notes' button to extract the text.")
 
-                    # Re-render messages to immediately show the image upload
-                    for message in st.session_state.messages:
-                        with st.chat_message(message["role"]):
-                            for content in message["content"]:
-                                if content["type"] == "text":
-                                    st.write(content["text"])
-                                elif content["type"] == "image_url":
-                                    st.image(content["image_url"]["url"])
-
             cols_img = st.columns(2)
             with cols_img[0]:
                 st.file_uploader(
@@ -188,23 +179,23 @@ def main():
             if st.button("Transcribe Handwritten Notes"):
                 if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
                     raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
+                    prompt = "Please transcribe my handwritten notes to text."
                     st.session_state.messages.append(
                         {
                             "role": "user",
                             "content": [{"type": "text", "text": prompt}]
                         }
                     )
-                    st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
+                    st.success("Image transcription prompt added. The assistant will now process it.")
 
-                    # Re-render messages to immediately show the transcription prompt
-                    for message in st.session_state.messages:
-                        with st.chat_message(message["role"]):
-                            for content in message["content"]:
-                                if content["type"] == "text":
-                                    st.write(content["text"])
-                                elif content["type"] == "image_url":
-                                    st.image(content["image_url"]["url"])
+                    # Explicitly trigger the assistant to generate a response right away
+                    with st.chat_message("assistant"):
+                        st.write_stream(
+                            stream_llm_response(
+                                model_params=model_params,
+                                api_key=openai_api_key
+                            )
+                        )
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
