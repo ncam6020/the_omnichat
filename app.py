@@ -72,10 +72,9 @@ def extract_text_from_image(image, api_key):
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
     # Use OpenAI's GPT model to interpret the image content
-    client = OpenAI(api_key=api_key)
     prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
-
-    response = client.chat.completions.create(
+    
+    response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
             {"role": "system", "content": "You are an expert at reading and transcribing handwritten notes."},
@@ -138,16 +137,27 @@ def main():
 
         # Step 3 - Add Handwritten Notes
         st.subheader("Step 3 - Add Handwritten Notes")
+        st.file_uploader(
+            "Upload an image:", 
+            type=["png", "jpg", "jpeg"], 
+            accept_multiple_files=False,
+            key="uploaded_img"
+        )
+        if st.button('Process Uploaded Image'):
+            if st.session_state.uploaded_img:
+                img_type = st.session_state.uploaded_img.type
+                raw_img = Image.open(st.session_state.uploaded_img)
+                extracted_text = extract_text_from_image(raw_img, st.session_state.openai_api_key)
+                # Append extracted text to session state without displaying in chat
+                st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
+                st.success("Image uploaded and text extracted successfully!")
 
     # --- Main Content ---
-    # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
     openai_api_key = st.session_state.openai_api_key
     if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
         st.write("#")
         st.warning("⬅️ Please introduce an API Key to continue...")
     else:
-        client = OpenAI(api_key=openai_api_key)
-
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
@@ -162,27 +172,6 @@ def main():
                         st.write(content["text"])
                     elif content["type"] == "image_url":      
                         st.image(content["image_url"]["url"])
-
-        # Image Upload
-        st.write(f"### **🖼️ Add an image:**")
-
-        def add_image_to_messages():
-            if st.session_state.uploaded_img:
-                img_type = st.session_state.uploaded_img.type
-                raw_img = Image.open(st.session_state.uploaded_img)
-                # Extract text from image using OpenAI API
-                extracted_text = extract_text_from_image(raw_img, openai_api_key)
-                # Append extracted text to session state
-                st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
-                st.success("Image uploaded and text extracted successfully!")
-
-        st.file_uploader(
-            "Upload an image:", 
-            type=["png", "jpg", "jpeg"], 
-            accept_multiple_files=False,
-            key="uploaded_img",
-            on_change=add_image_to_messages,
-        )
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
