@@ -143,6 +143,9 @@ def main():
     else:
         client = OpenAI(api_key=openai_api_key)
 
+        # Debug API key being used (truncated for safety)
+        st.write(f"Using API Key: {openai_api_key[:8]}...")  # Truncated key for safety
+
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
@@ -162,15 +165,18 @@ def main():
         if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
             if st.session_state.messages and st.session_state.messages[-1]["content"][0]["text"] == "Please transcribe my handwritten notes to text.":
                 with st.chat_message("assistant"):
-                    st.write_stream(
-                        stream_llm_response(
-                            model_params={
-                                "model": st.session_state.get("model", "gpt-4o"),
-                                "temperature": st.session_state.get("temperature", 0.3)
-                            },
-                            api_key=openai_api_key
+                    try:
+                        st.write_stream(
+                            stream_llm_response(
+                                model_params={
+                                    "model": st.session_state.get("model", "gpt-4o"),
+                                    "temperature": st.session_state.get("temperature", 0.3)
+                                },
+                                api_key=openai_api_key
+                            )
                         )
-                    )
+                    except openai.error.AuthenticationError:
+                        st.error("Authentication Error: Please check your OpenAI API Key.")
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
@@ -189,12 +195,15 @@ def main():
                 st.markdown(prompt)
 
             with st.chat_message("assistant"):
-                st.write_stream(
-                    stream_llm_response(
-                        model_params=model_params, 
-                        api_key=openai_api_key
+                try:
+                    st.write_stream(
+                        stream_llm_response(
+                            model_params=model_params, 
+                            api_key=openai_api_key
+                        )
                     )
-                )
+                except openai.error.AuthenticationError:
+                    st.error("Authentication Error: Please check your OpenAI API Key.")
 
 if __name__ == "__main__":
     main()
