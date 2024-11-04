@@ -147,7 +147,7 @@ def main():
         st.write("#")
         st.warning("⬅️ Please introduce an API Key to continue...")
     else:
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=openai_api_key)
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
