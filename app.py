@@ -1,6 +1,5 @@
 # Cleaned up version of the Minutes in a Minute Streamlit app
 import streamlit as st
-from openai import OpenAI
 import dotenv
 import os
 from PIL import Image
@@ -25,7 +24,9 @@ openai_models = [
 # Function to query and stream the response from OpenAI
 def stream_llm_response(model_params, api_key):
     response_message = ""
-    client = OpenAI(api_key=api_key)
+
+    # Use OpenAI API key directly for creating the client request
+    openai.api_key = api_key
 
     # Add transcript context if available
     if "transcript_context" in st.session_state and "messages" in st.session_state:
@@ -37,7 +38,8 @@ def stream_llm_response(model_params, api_key):
             }]
         })
 
-    for chunk in client.chat.completions.create(
+    # Stream response using OpenAI's new ChatCompletion API
+    for chunk in openai.ChatCompletion.create(
         model=model_params["model"] if "model" in model_params else "gpt-4o",
         messages=st.session_state.messages,
         temperature=model_params["temperature"] if "temperature" in model_params else 0.3,
@@ -48,6 +50,7 @@ def stream_llm_response(model_params, api_key):
         response_message += chunk_text
         yield chunk_text
 
+    # Store the full response in session state
     st.session_state.messages.append({
         "role": "assistant", 
         "content": [
@@ -57,7 +60,7 @@ def stream_llm_response(model_params, api_key):
             }
         ]})
 
-# Function to convert file to base64
+# Function to convert image to base64
 def get_image_base64(image_raw):
     buffered = BytesIO()
     image_raw.save(buffered, format=image_raw.format)
@@ -65,15 +68,17 @@ def get_image_base64(image_raw):
 
     return base64.b64encode(img_byte).decode('utf-8')
 
+# Function to extract text from the image using OpenAI API
 def extract_text_from_image(image, api_key):
-    # Convert the image to a base64 string
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    # Use OpenAI's GPT model to interpret the image content
+    # Define prompt to help OpenAI understand the task
     prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
-    
+
+    # Use OpenAI ChatCompletion to perform the text extraction
+    openai.api_key = api_key
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
@@ -137,22 +142,9 @@ def main():
 
         # Step 3 - Add Handwritten Notes
         st.subheader("Step 3 - Add Handwritten Notes")
-        st.file_uploader(
-            "Upload an image:", 
-            type=["png", "jpg", "jpeg"], 
-            accept_multiple_files=False,
-            key="uploaded_img"
-        )
-        if st.button('Process Uploaded Image'):
-            if st.session_state.uploaded_img:
-                img_type = st.session_state.uploaded_img.type
-                raw_img = Image.open(st.session_state.uploaded_img)
-                extracted_text = extract_text_from_image(raw_img, st.session_state.openai_api_key)
-                # Append extracted text to session state without displaying in chat
-                st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
-                st.success("Image uploaded and text extracted successfully!")
 
     # --- Main Content ---
+    # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
     openai_api_key = st.session_state.openai_api_key
     if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
         st.write("#")
@@ -172,6 +164,27 @@ def main():
                         st.write(content["text"])
                     elif content["type"] == "image_url":      
                         st.image(content["image_url"]["url"])
+
+        # Image Upload
+        st.write(f"### **🖼️ Add an image:**")
+
+        def add_image_to_messages():
+            if st.session_state.uploaded_img:
+                img_type = st.session_state.uploaded_img.type
+                raw_img = Image.open(st.session_state.uploaded_img)
+                # Extract text from image using OpenAI API
+                extracted_text = extract_text_from_image(raw_img, openai_api_key)
+                # Append extracted text to session state
+                st.session_state.transcript_context = f"{st.session_state.transcript_context}\n{extracted_text}" if "transcript_context" in st.session_state else extracted_text
+                st.success("Image uploaded and text extracted successfully!")
+
+        st.file_uploader(
+            "Upload an image:", 
+            type=["png", "jpg", "jpeg"], 
+            accept_multiple_files=False,
+            key="uploaded_img",
+            on_change=add_image_to_messages,
+        )
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
