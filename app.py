@@ -99,6 +99,22 @@ def main():
         st.write(f"### **📄 Add Teams Transcript:**")
         upload_transcript(display_in_chat=False)
 
+        def add_transcript_to_context():
+            if st.session_state.uploaded_docx:
+                doc = docx.Document(st.session_state.uploaded_docx)
+                transcript_text = "
+".join([para.text for para in doc.paragraphs])
+                st.session_state.transcript_context = transcript_text
+                st.success("Transcript uploaded successfully and loaded into context!")
+
+        st.file_uploader(
+            "Upload a Word document:", 
+            type=["docx"], 
+            accept_multiple_files=False,
+            key="uploaded_docx",
+            on_change=add_transcript_to_context,
+        )
+
         st.divider()
 
         # Image Upload for Handwritten Notes
