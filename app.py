@@ -88,7 +88,24 @@ def main():
         
         # Meeting Details Form in Expander
         with st.expander("🖋️ Add Meeting Details:"):
-            render_meeting_details_form()
+            if "meeting_details" not in st.session_state:
+                st.session_state.meeting_details = {
+                    "date": "",
+                    "time": "",
+                    "location": "",
+                    "attendees": "",
+                    "notes": ""
+                }
+
+            # Render the form with editable fields
+            st.session_state.meeting_details["date"] = st.text_input("Meeting Date", value=st.session_state.meeting_details["date"])
+            st.session_state.meeting_details["time"] = st.text_input("Meeting Time", value=st.session_state.meeting_details["time"])
+            st.session_state.meeting_details["location"] = st.text_input("Meeting Location", value=st.session_state.meeting_details["location"])
+            st.session_state.meeting_details["attendees"] = st.text_area("Attendees", value=st.session_state.meeting_details["attendees"])
+            st.session_state.meeting_details["notes"] = st.text_area("Notes", value=st.session_state.meeting_details["notes"])
+
+            if st.button("Save Meeting Details"):
+                st.success("Meeting details saved successfully!")
         
         st.divider()
 
