@@ -83,12 +83,14 @@ def main():
         st.divider()
         
         # Add button for meeting form
+        st.write(f"### **🖼️ Add Meeting Details:**")
         if st.button('Key Meeting Data'):
             st.session_state.update_form = True
         
         st.divider()
-
-        # Upload transcript functionality
+      
+        # Upload MSWord Transcripts
+        st.write(f"### **🖼️ Add Teams Transcripts:**")
         upload_transcript(display_in_chat=False)
 
         st.divider()
@@ -120,28 +122,17 @@ def main():
             on_change=add_image_to_messages,
         )
 
-        st.divider()
-
-        # Sidebar Model Options and Inputs
-        model = st.selectbox("Select a model:", openai_models, index=0)
-        with st.expander("⚙️ Model parameters"):
-            model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
-
-        model_params = {
-            "model": model,
-            "temperature": model_temp,
-        }
-
-        def reset_conversation():
-            if "messages" in st.session_state and len(st.session_state.messages) > 0:
-                st.session_state.pop("messages", None)
-
-        st.button(
-            "🗑️ Reset conversation", 
-            on_click=reset_conversation,
-        )
-
-        st.divider()
+        if st.button("Transcribe Handwritten Notes"):
+            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                prompt = "Please transcribe my handwritten notes to text."
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": prompt}]
+                    }
+                )
+                st.success("Image transcription prompt added. The assistant will now process it.")
 
     # --- Main Content Configuration ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
@@ -167,24 +158,16 @@ def main():
                     elif content["type"] == "image_url":      
                         st.image(content["image_url"]["url"])
 
-        # Button to extract text from the uploaded image
-        if st.button("Transcribe Handwritten Notes"):
-            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                prompt = "Please transcribe my handwritten notes to text."
-                st.session_state.messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                )
-                st.success("Image transcription prompt added. The assistant will now process it.")
-
-                # Explicitly trigger the assistant to generate a response right away in the main content area
+        # If there's a transcription request, handle it here in the main content
+        if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+            if st.session_state.messages and st.session_state.messages[-1]["content"][0]["text"] == "Please transcribe my handwritten notes to text.":
                 with st.chat_message("assistant"):
                     st.write_stream(
                         stream_llm_response(
-                            model_params=model_params,
+                            model_params={
+                                "model": st.session_state.get("model", "gpt-4o"),
+                                "temperature": st.session_state.get("temperature", 0.3)
+                            },
                             api_key=openai_api_key
                         )
                     )
