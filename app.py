@@ -69,7 +69,7 @@ def get_image_base64(image_raw):
 def main():
     # --- Page Config ---
     st.set_page_config(
-        page_title="Minutes in about a Minute",
+        page_title=" about a Minute",
         page_icon="🤖",
         layout="centered",
         initial_sidebar_state="expanded",
