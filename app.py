@@ -187,6 +187,15 @@ def main():
                     )
                     st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
 
+                    # Trigger the assistant to generate a response right away in the main content area
+                    with st.chat_message("assistant"):
+                        st.write_stream(
+                            stream_llm_response(
+                                model_params=model_params,
+                                api_key=openai_api_key
+                            )
+                        )
+
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
             st.session_state.messages.append(
