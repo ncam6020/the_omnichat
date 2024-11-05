@@ -1,285 +1,143 @@
-### Cleaned up version of the MinutesInAMinute Streamlit app
 import streamlit as st
-from openai import OpenAI
-import dotenv
-import os
-from PIL import Image
-import base64
-from io import BytesIO
-from meeting_details_form import render_meeting_details_form
-from upload_transcript import upload_transcript
 import openai
+from PIL import Image
+import pytesseract
 import docx
+import io
 
-dotenv.load_dotenv()
+# Set page config
+st.set_page_config(page_title="Minutes in a Minute ⏱️", page_icon="⏱️", layout="wide")
 
-# Only use OpenAI models
-openai_models = [
-    "gpt-4o-mini", 
-    "gpt-4-turbo", 
-    "gpt-3.5-turbo-16k", 
-    "gpt-4",
-    "gpt-4o",
-    "gpt-4-32k",
-]
+# Initialize session state
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
-# Function to query and stream the response from OpenAI
-def stream_llm_response(model_params, api_key):
-    response_message = ""
-    client = OpenAI(api_key=api_key)
+if 'meeting_details' not in st.session_state:
+    st.session_state.meeting_details = {}
 
-    # Add transcript context if available
-    if "transcript_context" in st.session_state and "messages" in st.session_state:
-        st.session_state.messages.insert(0, {
-            "role": "user",
-            "content": [{
-                "type": "text",
-                "text": f"Transcript context: {st.session_state.transcript_context}"
-            }]
-        })
+if 'transcript' not in st.session_state:
+    st.session_state.transcript = ""
 
-    for chunk in client.chat.completions.create(
-        model=model_params["model"] if "model" in model_params else "gpt-4o",
-        messages=st.session_state.messages,
-        temperature=model_params["temperature"] if "temperature" in model_params else 0.3,
-        max_tokens=4096,
-        stream=True,
-    ):
-        chunk_text = chunk.choices[0].delta.content or ""
-        response_message += chunk_text
-        yield chunk_text
+if 'handwritten_notes' not in st.session_state:
+    st.session_state.handwritten_notes = ""
 
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": [
-            {
-                "type": "text",
-                "text": response_message,
-            }
-        ]})
+# Sidebar
+st.sidebar.title("Configuration")
 
-# Function to convert file to base64
-def get_image_base64(image_raw):
-    buffered = BytesIO()
-    image_raw.save(buffered, format=image_raw.format)
-    img_byte = buffered.getvalue()
+# API Key input
+api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+if api_key:
+    openai.api_key = api_key
 
-    return base64.b64encode(img_byte).decode('utf-8')
-
-def main():
-    # --- Page Config ---
-    st.set_page_config(
-        page_title=" about a Minute",
-        page_icon="🤖",
-        layout="centered",
-        initial_sidebar_state="expanded",
-    )
-
-    # --- Title on Loading Page ---
-    st.title("Minutes in a Minute ⏱️")
-
-    # --- Sidebar Configuration ---
-    with st.sidebar:
-        st.write("## Configuration Panel")
-        st.write("This panel allows you to configure the key settings for the application.")
-        st.divider()
-        
-        # API Key Input
-        default_openai_api_key = os.getenv("OPENAI_API_KEY") if os.getenv("OPENAI_API_KEY") is not None else ""  # only for development environment, otherwise it should return None
-        st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
-        st.divider()
-        
-        # Meeting Details Form in Expander
-        with st.expander("🖋️ Add Meeting Details:"):
-            render_meeting_details_form()
-        
-        st.divider()
-
-        # Upload transcript functionality
-        st.write(f"### **📄 Add Teams Transcript:**")
-        upload_transcript(display_in_chat=False)
-
-        def add_transcript_to_context():
-            if st.session_state.uploaded_docx:
-                doc = docx.Document(st.session_state.uploaded_docx)
-                transcript_text = "\n".join([para.text for para in doc.paragraphs])
-                st.session_state.transcript_context = transcript_text
-                st.success("Transcript uploaded successfully and loaded into context!")
-
-        st.file_uploader(
-            "Upload a Word document:", 
-            type=["docx"], 
-            accept_multiple_files=False,
-            key="uploaded_docx",
-            on_change=add_transcript_to_context,
-        )
-
-        st.divider()
-
-        # Image Upload for Handwritten Notes
-        st.write(f"### **🗑️ Add Handwritten Notes:**")
-
-        def add_image_to_messages():
-            if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
-                img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                # Append image to the session, view it in the chat
-                st.session_state.messages.append(
-                    {
-                        "role": "user", 
-                        "content": [{
-                            "type": "image_url",
-                            "image_url": {"url": f"data:{img_type};base64,{get_image_base64(raw_img)}"}
-                        }]
-                    }
-                )
-                st.success("Image uploaded successfully! Now you can use the 'Transcribe Handwritten Notes' button to extract the text.")
-
-        st.file_uploader(
-            "Upload an image:", 
-            type=["png", "jpg", "jpeg"], 
-            accept_multiple_files=False,
-            key="uploaded_img",
-            on_change=add_image_to_messages,
-        )
-
-        st.divider()
-
-        # Sidebar Model Options and Inputs
-        with st.expander("⚙️ Model parameters"):
-            model = st.selectbox("Select a model:", openai_models, index=0)
-            model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
-
-        model_params = {
-            "model": model,
-            "temperature": model_temp,
+# Meeting Details Form
+st.sidebar.subheader("Meeting Details")
+with st.sidebar.expander("Add Meeting Details"):
+    date = st.date_input("Date")
+    time = st.time_input("Time")
+    location = st.text_input("Location")
+    project_name = st.text_input("Project Name")
+    attendees = st.text_area("Attendees (one per line)")
+    
+    if st.button("Save Meeting Details"):
+        st.session_state.meeting_details = {
+            "Date": date.strftime("%Y-%m-%d"),
+            "Time": time.strftime("%H:%M"),
+            "Location": location,
+            "Project Name": project_name,
+            "Attendees": attendees.split("\n")
         }
+        st.sidebar.success("Meeting details saved!")
 
-        def reset_conversation():
-            if "messages" in st.session_state and len(st.session_state.messages) > 0:
-                st.session_state.pop("messages", None)
+# Upload Teams Transcript
+uploaded_file = st.sidebar.file_uploader("Upload Teams Transcript (Word document)", type="docx")
+if uploaded_file is not None:
+    doc = docx.Document(uploaded_file)
+    st.session_state.transcript = "\n".join([para.text for para in doc.paragraphs])
+    st.sidebar.success("Transcript uploaded and processed!")
 
-        st.button(
-            "🗑️ Reset conversation", 
-            on_click=reset_conversation,
-        )
+# Upload Handwritten Notes
+uploaded_image = st.sidebar.file_uploader("Upload Handwritten Notes", type=["png", "jpg", "jpeg"])
+if uploaded_image is not None:
+    image = Image.open(uploaded_image)
+    st.session_state.handwritten_notes = pytesseract.image_to_string(image)
+    st.sidebar.success("Handwritten notes uploaded!")
 
-        st.divider()
+# Model Parameters
+model = st.sidebar.selectbox("Select OpenAI Model", ["gpt-3.5-turbo", "gpt-4"])
+temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7)
 
-    # --- Main Content Configuration ---
-    # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
-    openai_api_key = st.session_state.openai_api_key
-    if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
-        st.write("#")
-        st.warning("⬅️ Please introduce an API Key to continue...")
+# Reset Conversation
+if st.sidebar.button("Reset Conversation"):
+    st.session_state.chat_history = []
+    st.session_state.transcript = ""
+    st.session_state.handwritten_notes = ""
+    st.sidebar.success("Conversation reset!")
+
+# Main Content Area
+st.title("Minutes in a Minute ⏱️")
+
+# Generate Meeting Minutes Button
+if st.button("Generate Meeting Minutes", key="generate_minutes"):
+    if not api_key:
+        st.error("Please enter your OpenAI API key in the sidebar.")
     else:
-        client = OpenAI(api_key=openai_api_key)
-
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-        if "transcript_context" not in st.session_state:
-            st.session_state.transcript_context = ""
-        if "meeting_details" not in st.session_state:
-            st.session_state.meeting_details = {}
-
-        # Displaying the previous messages if there are any
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                for content in message["content"]:
-                    if content["type"] == "text":
-                        st.write(content["text"])
-                    elif content["type"] == "image_url":      
-                        st.image(content["image_url"]["url"])
-
-        # Button to extract text from the uploaded image
-        if st.button("Transcribe Handwritten Notes"):
-            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                prompt = "Please transcribe my handwritten notes to text."
-                st.session_state.messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                )
-                st.success("Image transcription prompt added. The assistant will now process it.")
-
-                # Explicitly trigger the assistant to generate a response right away in the main content area
-                with st.chat_message("assistant"):
-                    st.write_stream(
-                        stream_llm_response(
-                            model_params=model_params,
-                            api_key=openai_api_key
-                        )
-                    )
-
-        # Button to generate meeting minutes (moved to main content area)
-        if st.button("📝 Generate Meeting Minutes"):
-            # Ensure messages list is initialized
-            if "messages" not in st.session_state:
-                st.session_state.messages = []
-            meeting_details = st.session_state.get("meeting_details", {})
-            transcript_context = st.session_state.get("transcript_context", "")
-            messages = [
-                {
-                    "role": "user",
-                    "content": [{
-                        "type": "text",
-                        "text": (
-                            "Using the following information, please generate meeting minutes in the specified format:\n"
-                            "\nMeeting Details:\n"
-                            f"Meeting Date: {meeting_details.get('date', '')}\n"
-                            f"Meeting Time: {meeting_details.get('time', '')}\n"
-                            f"Meeting Location: {meeting_details.get('location', '')}\n"
-                            f"Project Name: {meeting_details.get('project_name', '')}\n"
-                            f"Project Number: {meeting_details.get('project_number', '')}\n"
-                            f"Attendees: {meeting_details.get('attendees', '')}\n"
-                            f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}\n"
-                            f"CC: {meeting_details.get('cc', '')}\n"
-                            "\nTranscript Context:\n"
-                            f"{transcript_context}\n"
-                            "\nNotes:\nPlease note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
-                            "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
-                        )
-                    }]
-                }
-            ]
-
-            st.session_state.messages.extend(messages)
-            st.success("Meeting details and transcript added to context for generating meeting minutes.")
-
-            # Trigger assistant to generate minutes
-            with st.chat_message("assistant"):
-                st.write_stream(
-                    stream_llm_response(
-                        model_params=model_params,
-                        api_key=openai_api_key
-                    )
-                )
-
-        # Chat input
-        if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
-            st.session_state.messages.append(
-                {
-                    "role": "user", 
-                    "content": [{
-                        "type": "text",
-                        "text": prompt,
-                    }]
-                }
+        with st.spinner("Generating meeting minutes..."):
+            prompt = f"""
+            Generate professional meeting minutes based on the following information:
+            
+            Meeting Details:
+            {st.session_state.meeting_details}
+            
+            Transcript:
+            {st.session_state.transcript}
+            
+            Handwritten Notes:
+            {st.session_state.handwritten_notes}
+            
+            Please format the minutes in a clear, concise manner with appropriate headings and bullet points.
+            Include a summary of key discussion points, decisions made, and action items.
+            End with a disclaimer stating these are AI-generated minutes and participants should provide any corrections if needed.
+            """
+            
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=[{"role": "system", "content": "You are a professional meeting minutes generator."},
+                          {"role": "user", "content": prompt}],
+                temperature=temperature
             )
             
-            # Display the new messages
-            with st.chat_message("user"):
-                st.markdown(prompt)
+            minutes = response.choices[0].message.content
+            st.session_state.chat_history.append(("assistant", minutes))
 
-            with st.chat_message("assistant"):
-                st.write_stream(
-                    stream_llm_response(
-                        model_params=model_params, 
-                        api_key=openai_api_key
-                    )
-                )
+# Transcribe Handwritten Notes Button
+if st.button("Transcribe Handwritten Notes", key="transcribe_notes"):
+    if st.session_state.handwritten_notes:
+        st.text_area("Transcribed Notes", st.session_state.handwritten_notes, height=200)
+    else:
+        st.warning("No handwritten notes uploaded yet.")
 
-if __name__ == "__main__":
-    main()
+# Display Chat History (Meeting Minutes)
+for role, content in st.session_state.chat_history:
+    if role == "assistant":
+        st.markdown(content)
+
+# Chat Input for Further Interaction
+user_input = st.text_input("Let's Make Some Meeting Minutes...", key="user_input")
+if user_input:
+    st.session_state.chat_history.append(("user", user_input))
+    
+    with st.spinner("Thinking..."):
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[{"role": "system", "content": "You are a helpful assistant for generating and modifying meeting minutes."}] +
+                     [{"role": m[0], "content": m[1]} for m in st.session_state.chat_history],
+            temperature=temperature
+        )
+        
+        ai_response = response.choices[0].message.content
+        st.session_state.chat_history.append(("assistant", ai_response))
+        st.markdown(ai_response)
+
+# Footer
+st.markdown("---")
+st.markdown("Powered by OpenAI and Streamlit")
