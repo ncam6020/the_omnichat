@@ -204,8 +204,7 @@ def main():
                         )
                     )
 
-      # Button to generate meeting minutes (moved to main content area)
-if st.button("📝 Generate Meeting Minutes"):
+        if st.button("📝 Generate Meeting Minutes"):
     # Ensure messages list is initialized
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -252,10 +251,9 @@ if st.button("📝 Generate Meeting Minutes"):
         st.write_stream(
             stream_llm_response(
                 model_params=model_params,
-                api_key=openai_api_key
+                api_key=openai_api_key,
             )
         )
- 
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
