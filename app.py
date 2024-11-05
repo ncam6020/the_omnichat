@@ -1,4 +1,4 @@
-# Cleaned up version of the MinutesInAMinute Streamlit app
+## Cleaned up version of the OmniChat Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
@@ -9,7 +9,6 @@ from io import BytesIO
 from meeting_details_form import render_meeting_details_form
 from upload_transcript import upload_transcript
 import openai
-import docx
 
 dotenv.load_dotenv()
 
@@ -69,72 +68,29 @@ def get_image_base64(image_raw):
 def main():
     # --- Page Config ---
     st.set_page_config(
-        page_title="Minutes in about a Minute",
+        page_title="The OmniChat",
         page_icon="🤖",
         layout="centered",
         initial_sidebar_state="expanded",
     )
 
-    # --- Sidebar Configuration ---
+    # --- Header ---
+    st.markdown("""<h1 style="text-align: center; color: #6ca395;">🤖 <i>The OmniChat</i> 💬</h1>""", unsafe_allow_html=True)
+
+    # --- Side Bar ---
     with st.sidebar:
-        # API Key Input
         default_openai_api_key = os.getenv("OPENAI_API_KEY") if os.getenv("OPENAI_API_KEY") is not None else ""  # only for development environment, otherwise it should return None
         st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
         st.divider()
         
-        # Add button for meeting form
-        st.write(f"### **🖼️ Add Meeting Details:**")
-        if st.button('Key Meeting Data'):
+        # Add button to view/update meeting form
+        if st.button('View/Update Meeting Form'):
             st.session_state.update_form = True
-        
-        st.divider()
-      
-        # Upload MSWord Transcripts
-        st.write(f"### **🖼️ Add Teams Transcripts:**")
+
+        # Upload transcript functionality
         upload_transcript(display_in_chat=False)
 
-        st.divider()
-
-        # Image Upload for Handwritten Notes
-        st.write(f"### **🖼️ Add Handwritten Notes:**")
-
-        def add_image_to_messages():
-            if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
-                img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                # Append image to the session, view it in the chat
-                st.session_state.messages.append(
-                    {
-                        "role": "user", 
-                        "content": [{
-                            "type": "image_url",
-                            "image_url": {"url": f"data:{img_type};base64,{get_image_base64(raw_img)}"}
-                        }]
-                    }
-                )
-                st.success("Image uploaded successfully! Now you can use the 'Transcribe Handwritten Notes' button to extract the text.")
-
-        st.file_uploader(
-            "Upload an image:", 
-            type=["png", "jpg", "jpeg"], 
-            accept_multiple_files=False,
-            key="uploaded_img",
-            on_change=add_image_to_messages,
-        )
-
-        if st.button("Transcribe Handwritten Notes"):
-            if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-                raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                prompt = "Please transcribe my handwritten notes to text."
-                st.session_state.messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                )
-                st.success("Image transcription prompt added. The assistant will now process it.")
-
-    # --- Main Content Configuration ---
+    # --- Main Content ---
     # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
     openai_api_key = st.session_state.openai_api_key
     if openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key:
@@ -158,22 +114,81 @@ def main():
                     elif content["type"] == "image_url":      
                         st.image(content["image_url"]["url"])
 
-        # If there's a transcription request, handle it here in the main content
-        if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-            if st.session_state.messages and st.session_state.messages[-1]["content"][0]["text"] == "Please transcribe my handwritten notes to text.":
-                with st.chat_message("assistant"):
-                    st.write_stream(
-                        stream_llm_response(
-                            model_params={
-                                "model": st.session_state.get("model", "gpt-4o"),
-                                "temperature": st.session_state.get("temperature", 0.3)
-                            },
-                            api_key=openai_api_key
-                        )
+        # Side bar model options and inputs
+        with st.sidebar:
+            model = st.selectbox("Select a model:", openai_models, index=0)
+            with st.expander("⚙️ Model parameters"):
+                model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
+
+            model_params = {
+                "model": model,
+                "temperature": model_temp,
+            }
+
+            def reset_conversation():
+                if "messages" in st.session_state and len(st.session_state.messages) > 0:
+                    st.session_state.pop("messages", None)
+
+            st.button(
+                "🗑️ Reset conversation", 
+                on_click=reset_conversation,
+            )
+
+            st.divider()
+
+            # Image Upload
+            st.write(f"### **🖼️ Add an image:**")
+
+            def add_image_to_messages():
+                if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
+                    img_type = st.session_state.uploaded_img.type if st.session_state.uploaded_img else "image/jpeg"
+                    raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                    # Append image to the session, view it in the chat
+                    st.session_state.messages.append(
+                        {
+                            "role": "user", 
+                            "content": [{
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{img_type};base64,{get_image_base64(raw_img)}"}
+                            }]
+                        }
+                    )
+                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Image Text' button to extract the text.")
+
+            cols_img = st.columns(2)
+            with cols_img[0]:
+                st.file_uploader(
+                    "Upload an image:", 
+                    type=["png", "jpg", "jpeg"], 
+                    accept_multiple_files=False,
+                    key="uploaded_img",
+                    on_change=add_image_to_messages,
+                )
+
+            with cols_img[1]:                    
+                st.checkbox("Activate camera", key="activate_camera")
+                if st.session_state.activate_camera:
+                    st.camera_input(
+                        "Take a picture", 
+                        key="camera_img",
+                        on_change=add_image_to_messages,
                     )
 
+            # Button to extract text from the uploaded image
+            if st.button("Transcribe Image Text"):
+                if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
+                    raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
+                    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
+                    st.session_state.messages.append(
+                        {
+                            "role": "user",
+                            "content": [{"type": "text", "text": prompt}]
+                        }
+                    )
+                    st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
+
         # Chat input
-        if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
+        if prompt := st.chat_input("Hi! Ask me anything..."):
             st.session_state.messages.append(
                 {
                     "role": "user", 
