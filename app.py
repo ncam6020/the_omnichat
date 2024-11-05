@@ -204,49 +204,56 @@ def main():
                         )
                     )
 
-        # Button to generate meeting minutes (moved to main content area)
         if st.button("📝 Generate Meeting Minutes"):
-            # Ensure messages list is initialized
-            if "messages" not in st.session_state:
-                st.session_state.messages = []
-            meeting_details = st.session_state.get("meeting_details", {})
-            transcript_context = st.session_state.get("transcript_context", "")
-            prompt_text = (
-                "Using the following information, please generate meeting minutes in the specified format:\n"
-                "\nMeeting Details:\n"
-                f"Meeting Date: {meeting_details.get('date', '')}\n"
-                f"Meeting Time: {meeting_details.get('time', '')}\n"
-                f"Meeting Location: {meeting_details.get('location', '')}\n"
-                f"Project Name: {meeting_details.get('project_name', '')}\n"
-                f"Project Number: {meeting_details.get('project_number', '')}\n"
-                f"Attendees: {meeting_details.get('attendees', '')}\n"
-                f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}\n"
-                f"CC: {meeting_details.get('cc', '')}\n"
-                "\nTranscript Context:\n"
-                f"{transcript_context}\n"
-                "\nNotes:\nPlease note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
-                "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
-            )
-            
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": [{
-                        "type": "text",
-                        "text": prompt_text
-                    }]
-                }
-            )
-            st.success("Meeting details and transcript added to context for generating meeting minutes.")
+    # Ensure messages list is initialized
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    # Get meeting details and transcript from session state
+    meeting_details = st.session_state.get("meeting_details", {})
+    transcript_context = st.session_state.get("transcript_context", "")
+    
+    # Prepare the prompt text with meeting details and notes
+    prompt_text = (
+        "Using the following information, please generate meeting minutes in the specified format:\n"
+        "\nMeeting Details:\n"
+        f"Meeting Date: {meeting_details.get('date', '')}\n"
+        f"Meeting Time: {meeting_details.get('time', '')}\n"
+        f"Meeting Location: {meeting_details.get('location', '')}\n"
+        f"Project Name: {meeting_details.get('project_name', '')}\n"
+        f"Project Number: {meeting_details.get('project_number', '')}\n"
+        f"Attendees: {meeting_details.get('attendees', '')}\n"
+        f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}\n"
+        f"CC: {meeting_details.get('cc', '')}\n"
+        "\nNotes:\nPlease note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
+        "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
+    )
 
-            # Trigger assistant to generate minutes
-            with st.chat_message("assistant"):
-                st.write_stream(
-                    stream_llm_response(
-                        model_params=model_params,
-                        api_key=openai_api_key
-                    )
-                )
+    # Prepare a temporary message list including the context for the model, without saving it permanently in the chat history
+    temp_messages = st.session_state.messages + [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": prompt_text}]
+        }
+    ]
+    
+    # Use the transcript context directly in the model query without saving it in the messages list
+    if transcript_context:
+        temp_messages.append({
+            "role": "user",
+            "content": [{"type": "text", "text": f"Transcript Context:\n{transcript_context}"}]
+        })
+
+    st.success("Generating meeting minutes based on provided meeting details and transcript.")
+
+    # Trigger assistant to generate minutes
+    with st.chat_message("assistant"):
+        st.write_stream(
+            stream_llm_response(
+                model_params=model_params,
+                api_key=openai_api_key,
+            )
+        )
 
         # Chat input
         if prompt := st.chat_input("Lets Make Some Meeting Minutes..."):
