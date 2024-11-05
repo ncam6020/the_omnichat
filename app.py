@@ -100,7 +100,7 @@ def main():
         st.divider()
 
         # Image Upload for Handwritten Notes
-        st.write(f"### **📝 Add Handwritten Notes:**")
+        st.write(f"### **🗑️ Add Handwritten Notes:**")
 
         def add_image_to_messages():
             if st.session_state.uploaded_img or ("camera_img" in st.session_state and st.session_state.camera_img):
@@ -129,8 +129,8 @@ def main():
         st.divider()
 
         # Sidebar Model Options and Inputs
-        model = st.selectbox("Select a model:", openai_models, index=0)
         with st.expander("⚙️ Model parameters"):
+            model = st.selectbox("Select a model:", openai_models, index=0)
             model_temp = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.3, step=0.1)
 
         model_params = {
