@@ -86,10 +86,9 @@ def main():
         st.text_input("Introduce your OpenAI API Key (https://platform.openai.com/)", value=default_openai_api_key, type="password", key="openai_api_key")
         st.divider()
         
-        # Add button for meeting form
-        st.write(f"### **🖋️ Add Meeting Details:**")
-        if st.button('Key Meeting Data'):
-            st.session_state.update_form = True
+        # Meeting Details Form in Expander
+        with st.expander("🖋️ Add Meeting Details:"):
+            render_meeting_details_form()
         
         st.divider()
 
@@ -160,9 +159,6 @@ def main():
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
-
-        # --- Meeting Details Form ---
-        render_meeting_details_form()
 
         # Displaying the previous messages if there are any
         for message in st.session_state.messages:
