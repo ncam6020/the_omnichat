@@ -106,13 +106,13 @@ def main():
                 st.session_state.transcript_context = transcript_text
                 st.success("Transcript uploaded successfully and loaded into context!")
 
-        st.file_uploader(
-            "Upload a Word document:", 
-            type=["docx"], 
-            accept_multiple_files=False,
-            key="uploaded_docx",
-            on_change=add_transcript_to_context,
-        )
+        #st.file_uploader(
+           # "Upload a Word document:", 
+            #type=["docx"], 
+           # accept_multiple_files=False,
+           # key="uploaded_docx",
+           # on_change=add_transcript_to_context,
+      #  )
 
         st.divider()
 
