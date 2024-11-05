@@ -75,6 +75,9 @@ def main():
         initial_sidebar_state="expanded",
     )
 
+    # --- Title on Loading Page ---
+    st.title("Minutes in a Minute ⏱️")
+
     # --- Sidebar Configuration ---
     with st.sidebar:
         st.write("## Configuration Panel")
