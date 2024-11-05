@@ -153,7 +153,16 @@ def main():
                             }]
                         }
                     )
-                    st.success("Image uploaded successfully! Now you can use the 'Transcribe Image Text' button to extract the text.")
+                    st.success("Image uploaded successfully! The assistant will now process the transcription.")
+
+                    # Trigger the assistant to generate a response right away in the main content area
+                    with st.chat_message("assistant"):
+                        st.write_stream(
+                            stream_llm_response(
+                                model_params=model_params,
+                                api_key=openai_api_key
+                            )
+                        )
 
             cols_img = st.columns(2)
             with cols_img[0]:
@@ -173,28 +182,6 @@ def main():
                         key="camera_img",
                         on_change=add_image_to_messages,
                     )
-
-            # Button to extract text from the uploaded image
-            if st.button("Transcribe Image Text"):
-                if "uploaded_img" in st.session_state or "camera_img" in st.session_state:
-                    raw_img = Image.open(st.session_state.uploaded_img or st.session_state.camera_img)
-                    prompt = "Extract the handwritten notes from the provided image and transcribe them into text."
-                    st.session_state.messages.append(
-                        {
-                            "role": "user",
-                            "content": [{"type": "text", "text": prompt}]
-                        }
-                    )
-                    st.success("Image transcription prompt added. You can now see the transcription in the chat output.")
-
-                    # Trigger the assistant to generate a response right away in the main content area
-                    with st.chat_message("assistant"):
-                        st.write_stream(
-                            stream_llm_response(
-                                model_params=model_params,
-                                api_key=openai_api_key
-                            )
-                        )
 
         # Chat input
         if prompt := st.chat_input("Hi! Ask me anything..."):
