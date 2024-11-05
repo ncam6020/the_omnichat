@@ -1,4 +1,4 @@
-// # Cleaned up version of the MinutesInAMinute Streamlit app
+# Cleaned up version of the MinutesInAMinute Streamlit app
 import streamlit as st
 from openai import OpenAI
 import dotenv
