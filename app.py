@@ -176,7 +176,11 @@ def main():
         client = OpenAI(api_key=openai_api_key)
 
         if "messages" not in st.session_state:
-            st.session_state.messages = []
+        st.session_state.messages = []
+    if "transcript_context" not in st.session_state:
+        st.session_state.transcript_context = ""
+    if "meeting_details" not in st.session_state:
+        st.session_state.meeting_details = {}
 
         # Displaying the previous messages if there are any
         for message in st.session_state.messages:
@@ -211,6 +215,9 @@ def main():
 
         # Button to generate meeting minutes (moved to main content area)
         if st.button("📝 Generate Meeting Minutes"):
+        # Ensure messages list is initialized
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
             meeting_details = st.session_state.get("meeting_details", {})
             transcript_context = st.session_state.get("transcript_context", "")
             messages = [
