@@ -29,7 +29,6 @@ def stream_llm_response(model_params, api_key):
     client = OpenAI(api_key=api_key)
 
     # Add transcript context if available
-    
     for chunk in client.chat.completions.create(
         model=model_params["model"] if "model" in model_params else "gpt-4o",
         messages=st.session_state.messages,
@@ -207,94 +206,37 @@ def main():
 
         # Button to generate meeting minutes (moved to main content area)
         if st.button("📝 Generate Meeting Minutes"):
-        # Ensure messages list is initialized
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-        
-        meeting_details = st.session_state.get("meeting_details", {})
-        transcript_context = st.session_state.get("transcript_context", "")
-        
-        # Only add transcript context to prompt, not as a chat message
-        prompt_text = (
-            "Using the following information, please generate meeting minutes in the specified format:
-"
-            "
-Meeting Details:
-"
-            f"Meeting Date: {meeting_details.get('date', '')}
-"
-            f"Meeting Time: {meeting_details.get('time', '')}
-"
-            f"Meeting Location: {meeting_details.get('location', '')}
-"
-            f"Project Name: {meeting_details.get('project_name', '')}
-"
-            f"Project Number: {meeting_details.get('project_number', '')}
-"
-            f"Attendees: {meeting_details.get('attendees', '')}
-"
-            f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}
-"
-            f"CC: {meeting_details.get('cc', '')}
-"
-            "
-Transcript Context:
-"
-            f"{transcript_context}
-"
-            "
-Notes:
-Please note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
-            "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
-        )
-        
-        st.session_state.messages.append(
-            {
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": prompt_text
-                }]
-            }
-        )
-        st.success("Meeting details and transcript added to context for generating meeting minutes.")
-
-        # Trigger assistant to generate minutes
-        with st.chat_message("assistant"):
-            st.write_stream(
-                stream_llm_response(
-                    model_params=model_params,
-                    api_key=openai_api_key
-                )
-            )
+            # Ensure messages list is initialized
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
             meeting_details = st.session_state.get("meeting_details", {})
             transcript_context = st.session_state.get("transcript_context", "")
-            messages = [
+            prompt_text = (
+                "Using the following information, please generate meeting minutes in the specified format:\n"
+                "\nMeeting Details:\n"
+                f"Meeting Date: {meeting_details.get('date', '')}\n"
+                f"Meeting Time: {meeting_details.get('time', '')}\n"
+                f"Meeting Location: {meeting_details.get('location', '')}\n"
+                f"Project Name: {meeting_details.get('project_name', '')}\n"
+                f"Project Number: {meeting_details.get('project_number', '')}\n"
+                f"Attendees: {meeting_details.get('attendees', '')}\n"
+                f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}\n"
+                f"CC: {meeting_details.get('cc', '')}\n"
+                "\nTranscript Context:\n"
+                f"{transcript_context}\n"
+                "\nNotes:\nPlease note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
+                "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
+            )
+            
+            st.session_state.messages.append(
                 {
                     "role": "user",
                     "content": [{
                         "type": "text",
-                        "text": (
-                            "Using the following information, please generate meeting minutes in the specified format:\n"
-                            "\nMeeting Details:\n"
-                            f"Meeting Date: {meeting_details.get('date', '')}\n"
-                            f"Meeting Time: {meeting_details.get('time', '')}\n"
-                            f"Meeting Location: {meeting_details.get('location', '')}\n"
-                            f"Project Name: {meeting_details.get('project_name', '')}\n"
-                            f"Project Number: {meeting_details.get('project_number', '')}\n"
-                            f"Attendees: {meeting_details.get('attendees', '')}\n"
-                            f"Next Meeting Date: {meeting_details.get('next_meeting_date', '')}\n"
-                            f"CC: {meeting_details.get('cc', '')}\n"
-                            "\nTranscript Context:\n"
-                            f"{transcript_context}\n"
-                            "\nNotes:\nPlease note: The foregoing constitutes our understanding of matters discussed and conclusions reached. "
-                            "Other participants are requested to review these items and advise the originator in writing of any errors or omissions."
-                        )
+                        "text": prompt_text
                     }]
                 }
-            ]
-
-            st.session_state.messages.extend(messages)
+            )
             st.success("Meeting details and transcript added to context for generating meeting minutes.")
 
             # Trigger assistant to generate minutes
