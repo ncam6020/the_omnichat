@@ -102,8 +102,7 @@ def main():
         def add_transcript_to_context():
             if st.session_state.uploaded_docx:
                 doc = docx.Document(st.session_state.uploaded_docx)
-                transcript_text = "
-""".join([para.text for para in doc.paragraphs])
+                transcript_text = "\n".join([para.text for para in doc.paragraphs])
                 st.session_state.transcript_context = transcript_text
                 st.success("Transcript uploaded successfully and loaded into context!")
 
@@ -236,4 +235,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
