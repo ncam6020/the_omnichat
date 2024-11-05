@@ -103,7 +103,7 @@ def main():
             if st.session_state.uploaded_docx:
                 doc = docx.Document(st.session_state.uploaded_docx)
                 transcript_text = "
-".join([para.text for para in doc.paragraphs])
+"".join([para.text for para in doc.paragraphs])
                 st.session_state.transcript_context = transcript_text
                 st.success("Transcript uploaded successfully and loaded into context!")
 
